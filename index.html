@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Jack Notifications V1.0</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+		<script src="http://localhost:9090/socket.io/socket.io.js"></script>
+		<style>
+			#responses{
+				background: none repeat scroll 0 0 #EAEAEA;
+				height: 200px;
+				overflow-y: scroll;
+				width: 400px;
+				margin-top: 20px;
+			}
+			
+			#responses p{
+				margin: 0;
+				border-bottom: 1px solid black;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Jack Notifications V1.0</h1>
+			<p>
+				Sistema de notificaciones en tiempo real PHP, nodejs.
+			</p>
+			<h2>Paso 1 (Elige)</h2>
+			<a class="login1" href="#">Login con Usuario 1</a><br/>
+			<a class="login2" href="#">Login con Usuario  2</a><br/>
+			<h2>Paso 2</h2>
+			<a class="conectar" href="#">Conectar</a><br/>
+			<h2>Paso 3 (Elige)</h2>
+			<a class="enviar1" href="#">Enviar notificación a Usuario 1</a></br>
+			<a class="enviar2" href="#">Enviar notificación a Usuario 2</a></br>
+			<div id="responses"></div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		var websocket = io.connect("http://localhost:9090");
+		var base_url = "http://localhost/jack_notifications/";
+		websocket.on("conectar", function(data){});
+		
+		websocket.on("actualizar_notificaciones", function(data){
+			$("#responses").append("<p>Notificación recibida: "+ JSON.stringify(data) +"</p>");
+		});
+	</script>
+	<script>	
+	$(function() {
+		$('.login1').click(function(e){
+			e.preventDefault();
+			$.ajax({
+				url: base_url + "login.php?u=1"
+			})
+			.done(function(data){
+				$("#responses").append("<p>Login con Usuario 1</p>");
+			})
+			.fail(function(){});
+		});
+		
+		$('.login2').click(function(e){
+			e.preventDefault();
+			$.ajax({
+				url: base_url + "login.php?u=2"
+			})
+			.done(function(data){
+				$("#responses").append("<p>Login con Usuario 2</p>");
+			})
+			.fail(function(){});
+		});
+		
+		$('.conectar').click(function(e){
+			e.preventDefault();
+			$("#responses").append("<p>Conectando...</p>");
+			$.ajax({
+				url: base_url + "conectar.php"
+			})
+			.done(function(data){
+				data = eval("("+data+")");
+				websocket.emit("notification_connect", data.token);
+				$("#responses").append("<p>Conectado</p>");
+			})
+			.fail(function(){});
+		});
+		
+		$('.enviar1').click(function(e){
+			e.preventDefault();
+			$("#responses").append("<p>Enviando notificación a Usuario 1...</p>");	
+			$.ajax({
+				url: base_url + "enviar_notificacion.php?id=78"
+			})
+			.done(function(data){})
+			.fail(function(){});
+		});
+		
+		$('.enviar2').click(function(e){
+			e.preventDefault();
+			$("#responses").append("<p>Enviando notificación a Usuario 1...</p>");	
+			$.ajax({
+				url: base_url + "enviar_notificacion.php?id=79"
+			})
+			.done(function(data){})
+			.fail(function(){});
+		});
+	});
+	</script>
+</html>
