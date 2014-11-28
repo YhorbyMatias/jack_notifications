@@ -1,5 +1,5 @@
 /*
-	Jack Notifications V1.0 - Server
+	Jack Notifications V1.1 - Server
 	Sistema de notificaciones en tiempo real PHP, nodejs
 */
 var io = require('socket.io').listen(9090);
@@ -10,10 +10,18 @@ var mysql_client = mysql.createConnection({
   password: '',
   host: 'localhost',
   port: '3306',
+  database: 'jack_notifications',
+  //socketPath: '/var/run/mysqld/mysqld.sock' //if you have problems with mysql
 });
-mysql_client.query('USE mi_base_de_datos');
 
-var secret_key = "SOQI6N3m8lApYX3MyUbpm7ZBSCzagCmtAKCPMhSKbom";
+mysql_client.connect(function(err, conn) {
+    if(err) {
+         console.log('MySQL connection error: ', err);
+         process.exit(1);
+    }
+});
+
+var secret_key = "A_BIG_BIG_SECRET_FOR_MY_APPLICATION";
 
 /*
 	Envio de notificaciones desde socket
@@ -25,26 +33,41 @@ require('net').createServer(function (socket) {
 		var dt = data.toString();
 		var json_data = eval("("+dt+")");
 		if(typeof json_data.secret !="undefined" && secret_key == json_data.secret){
-			mysql_client.query(
-				'SELECT * FROM core_notifications WHERE notification_id = ?',
-				[json_data.notification_id]
-				,
-				function(err, results, fields) {
-					if (err) {
-						console.log("Error: " + err.message);
-						throw err;
-					}
-					if(results.length){
-						var user_id = results[0].user_id;
-						io.sockets.in("room_"+user_id).emit('actualizar_notificaciones', "Notificacion de Servidor a "+user_id);
-						socket.write("NOTIFICATION_SENT\0");
+			if(typeof json_data.action != "undefined"){
+			
+				if(json_data.action == "send_id"){
+					mysql_client.query(
+						'SELECT * FROM core_notifications WHERE notification_id = ?',
+						[json_data.notification_id]
+						,
+						function(err, results, fields) {
+							if (err) {
+								console.log("Error: " + err.message);
+								throw err;
+							}
+							if(results.length){
+								var room_id = results[0].room_id;
+								io.to("room_"+room_id).emit('actualizar_notificaciones', results[0].content);
+								socket.write(JSON.stringify({response:"NOTIFICATION_SENT"}) + "\0");
+							}else{
+								socket.write(JSON.stringify({response:"ERROR"}) + "\0");
+							}
+						}
+					);
+				}else if(json_data.action == "send"){
+					var room = io.nsps["/"].adapter.rooms["room_"+json_data.room_id];
+					if(typeof room != "undefined" && Object.keys(room).length >= 1 ){
+						io.to("room_"+json_data.room_id).emit('actualizar_notificaciones', json_data.content);
+						socket.write(JSON.stringify({response:"NOTIFICATION_SENT"}) + "\0");
 					}else{
-						socket.write("ERROR\0");
+						socket.write(JSON.stringify({response:"NOTIFICATION_FAIL"}) + "\0");
 					}
 				}
-			);
+			}else{
+				socket.write(JSON.stringify({response:"ACCESS_DENIED"}) + "\0");
+			}
 		}else{
-			socket.write("ACCESS_DENIED\0");
+			socket.write(JSON.stringify({response:"ACCESS_DENIED"}) + "\0");
 		}
     });
 }).listen(9091);
@@ -68,13 +91,12 @@ io.sockets.on("connection", function(socket)
 				}
 			 
 				if(results.length){
-					socket.room = 'room_'+results[0].user_id;
-					socket.user_id = results[0].user_id;
-					socket.join('room_'+results[0].user_id);
+					socket.room_id = 'room_'+results[0].room_id;
+					socket.join('room_'+results[0].room_id);
 					
-					//Aquí eliminar el token ???
+					//DELETE TOKEN?
 					
-					io.sockets.emit("conectar", true);
+					io.to("room_"+results[0].room_id).emit("conectar", true);
 				}
 			}
 		);

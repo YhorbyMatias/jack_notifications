@@ -11,10 +11,9 @@
 	if(!empty($user_id)){
 		$room_id = $_GET['u']; //Filtrar
 		$jn = new JackNotifications();
-		$notification_id = $jn->guardar_notificacion("HERE YOUR FILTERED MESSAGE (THIS IS A EXAMPLE) ".date("d-m-Y H:i:s"), $room_id); 
-		$enviado = $jn->enviar_notificacion_id( $notification_id );
+		$enviado = $jn->enviar_notificacion("HERE YOUR FILTERED MESSAGE (THIS IS A EXAMPLE) ".date("d-m-Y H:i:s"), $room_id );
 		$jn->_dbclose();
-	
+		
 		echo json_encode( array("enviado"=> $enviado ) );
 	}else{
 		echo json_encode( array("enviado"=> "" ) );

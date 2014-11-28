@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>Jack Notifications V1.0</title>
+		<title>Jack Notifications V1.1 - 27/11/14</title>
 		<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 		<script src="http://localhost:9090/socket.io/socket.io.js"></script>
 		<style>
@@ -22,7 +22,7 @@
 	</head>
 	<body>
 		<div class="container">
-			<h1>Jack Notifications V1.0</h1>
+			<h1>Jack Notifications V1.1</h1>
 			<p>
 				Sistema de notificaciones en tiempo real PHP, nodejs.
 			</p>
@@ -32,18 +32,27 @@
 			<h2>Paso 2</h2>
 			<a class="conectar" href="#">Conectar</a><br/>
 			<h2>Paso 3 (Elige)</h2>
-			<a class="enviar1" href="#">Enviar notificación a Usuario 1</a></br>
+			<p>Estas opciones guardan los mensajes en base de datos</p>
+			<a class="enviar1" href="#">Enviar notificación a Usuario 1 </a></br>
 			<a class="enviar2" href="#">Enviar notificación a Usuario 2</a></br>
+			<p>Estas opciones NO guardan los mensajes en base de datos</p>
+			<a class="enviar3" href="#">Enviar notificación a Usuario 1 </a></br>
+			<a class="enviar4" href="#">Enviar notificación a Usuario 2</a></br>
 			<div id="responses"></div>
 		</div>
 	</body>
 	<script type="text/javascript">
 		var websocket = io.connect("http://localhost:9090");
 		var base_url = "http://localhost/jack_notifications/";
-		websocket.on("conectar", function(data){});
+		var token;
+		
+		websocket.on("conectar", function(data){
+			data = eval("("+data+")");
+			$("#responses").append("<p>Conectado</p>");
+		});
 		
 		websocket.on("actualizar_notificaciones", function(data){
-			$("#responses").append("<p>Notificación recibida: "+ JSON.stringify(data) +"</p>");
+			$("#responses").append( $("<p/>").text( "Notificación recibida: "+ data ) );
 		});
 	</script>
 	<script>	
@@ -79,7 +88,6 @@
 			.done(function(data){
 				data = eval("("+data+")");
 				websocket.emit("notification_connect", data.token);
-				$("#responses").append("<p>Conectado</p>");
 			})
 			.fail(function(){});
 		});
@@ -88,7 +96,7 @@
 			e.preventDefault();
 			$("#responses").append("<p>Enviando notificación a Usuario 1...</p>");	
 			$.ajax({
-				url: base_url + "enviar_notificacion.php?id=78"
+				url: base_url + "enviar_notificacion.php?u=1"
 			})
 			.done(function(data){})
 			.fail(function(){});
@@ -96,9 +104,29 @@
 		
 		$('.enviar2').click(function(e){
 			e.preventDefault();
+			$("#responses").append("<p>Enviando notificación a Usuario 2...</p>");	
+			$.ajax({
+				url: base_url + "enviar_notificacion.php?u=2"
+			})
+			.done(function(data){})
+			.fail(function(){});
+		});
+		
+		$('.enviar3').click(function(e){
+			e.preventDefault();
 			$("#responses").append("<p>Enviando notificación a Usuario 1...</p>");	
 			$.ajax({
-				url: base_url + "enviar_notificacion.php?id=79"
+				url: base_url + "enviar_notificacion_2.php?u=1"
+			})
+			.done(function(data){})
+			.fail(function(){});
+		});
+		
+		$('.enviar4').click(function(e){
+			e.preventDefault();
+			$("#responses").append("<p>Enviando notificación a Usuario 2...</p>");	
+			$.ajax({
+				url: base_url + "enviar_notificacion_2.php?u=2"
 			})
 			.done(function(data){})
 			.fail(function(){});
